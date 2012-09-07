@@ -3,24 +3,20 @@ void setup() {
 }
 
 void loop() {
-  char commands[20];
+  char commands[20]; //コマンド用バッファ
+  
   commands[0] = 0;
-  recvCmd(commands);
+  recvCmd(commands); //受信コマンドをcommandsに
   
   Serial.print("command[0] : ");
   Serial.println(commands[0]);
-  if(commands[0] == '$') {
+  if(commands[0] == '$') { //先頭が$ならPCから送られたコマンド
     Serial.println("command recieved");
     
-    int command_length = commands[1] + commands[2];
+    int command_length = commands[1] + (commands[2] * 256); //コマンド長計算
     Serial.print("command length : ");
     Serial.println(command_length);    
-    /*
-    if(commands[3] == 0x10) {
-      Serial.println("MODE : setting turn character");
-    }
-    */
-    
+
     switch(commands[3]) {  //コマンドにより分岐
       case 0x10:
         Serial.println("CMD : start turning");
@@ -40,29 +36,28 @@ void loop() {
   }
 }
 
-
-void recvCmd(char *buf) {
-  int count = 0;
-  char c;
+//recvCmd : シリアルからのコマンド受信用
+void recvCmd(char *buf) { 
+  int count = 0; //受信文字数カウント用
+  char c; //受信文字列の一時保管
   
   while(1) {
     if(Serial.available() > 0) {
       c = Serial.read();
-      if(c == '\n') { 
+      if(c == '\n') {  //改行コードは飛ばす
         Serial.println("Line feed code was detected");
         break;
       } else {  
         buf[count] = c;
       }
-      if(c == '%') break;
+      if(c == '%') break;  //終端記号%でルーブ脱出
       count++;
     }
   }
-  /*  -- for debug -- */
+  /*  -- for debug -- 受信メッセージ表示 */
   Serial.print("recieved message : ");
   for(int i=0; i<=count; i++) {
     Serial.print(buf[i]);
     Serial.print(",");
   }
-  
 }
