@@ -15,11 +15,12 @@ void loop() {
     
     int command_length = commands[1] + (commands[2] * 256); //コマンド長計算
     Serial.print("command length : ");
-    Serial.println(command_length);    
+    Serial.println(command_length);
 
     switch(commands[3]) {  //コマンドにより分岐
       case 0x10:
         Serial.println("CMD : start turning");
+        
       case 0x1F:
         Serial.println("CMD : stop turning");
       case 0x20:
@@ -28,6 +29,7 @@ void loop() {
         Serial.println("CMD : stop captureing");
       case 0x80:
         Serial.println("CMD : recieve turning symbol");
+        define_symbol(commands, command_length);
     }
         
     
@@ -59,5 +61,19 @@ void recvCmd(char *buf) {
   for(int i=0; i<=count; i++) {
     Serial.print(buf[i]);
     Serial.print(",");
+  }
+  Serial.println("");
+}
+
+//define_symbol : 解法受信と、使える形にして別の配列に移動。
+//define_symbol(受信したコマンドの配列, 結果出力用の配列)
+void define_symbol(char *buf, int com_len) {
+  char turn_symbols[com_len - 5];
+  for(int i=0; i <= com_len-6; i++) {
+    turn_symbols[i] = buf[i+4];
+    Serial.print("turn_symbols : ");
+    Serial.print(i+4);
+    Serial.print(" ");
+    Serial.println(buf[i+4]);
   }
 }
