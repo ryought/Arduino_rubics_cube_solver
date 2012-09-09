@@ -39,6 +39,8 @@ void move_arms(char *symbols, int com_len) {
   }
 }
 
+void define_symbols() {
+  turn_symbols
 
 
 
@@ -84,6 +86,8 @@ void loop() {
           Serial.println(turn_symbols[inc]);   
           //commands配列から回転記号を抽出し、turn_symbols配列に入れる。
         }
+        
+        
         
         break;
     }    
