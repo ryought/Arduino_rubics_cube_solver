@@ -1,4 +1,4 @@
-char turn_symbols = 0;
+char turn_symbols[20] = {0};
 
 void setup() {
   Serial.begin(9600);
@@ -32,27 +32,11 @@ void recvCmd(char *buf) {
 }
 
 
-//define_symbol : 解法受信と、使える形にして別の配列に移動。
-//define_symbol(受信したコマンドの配列, 結果出力用の配列)
-char define_symbol(char *buf, int com_len) {
-  char turn_symbols[com_len - 5];
-  for(int i=0; i <= com_len-6; i++) {
-    turn_symbols[i] = buf[i+4];
-    Serial.print("turn_symbols : ");
-    Serial.print(i+4);
-    Serial.print(" ");
-    Serial.println(buf[i+4]);
-  }
-  return *turn_symbols;
-}
-
-
 void move_arms(char *symbols, int com_len) {
-  Serial.print("-TURNING ");
-  for(int i=0; i<=com_len; i++) {
-    Serial.print(symbols[i]);
+  Serial.println(" : TURNING : ");
+  for(int i=0; i<=3; i++) {
+    Serial.println(symbols[i]);
   }
-  Serial.println("-");
 }
 
 
@@ -76,22 +60,38 @@ void loop() {
     switch(commands[3]) {  //コマンドにより分岐
       case 0x10:
         Serial.println("CMD : start turning");
-        //move_arms(turn_symbols, command_length);
+        for(int inc=0; inc<20; inc++) {
+          Serial.print("received : ");
+          Serial.println(turn_symbols[inc]);   
+        }
+        Serial.println("CMD : exit");
+        break;
       case 0x1F:
         Serial.println("CMD : stop turning");
+        break;
       case 0x20:
         Serial.println("CMD : start capturing");
+        break;
       case 0x2F:
         Serial.println("CMD : stop captureing");
+        break;
       case 0x80:
         Serial.println("CMD : recieve turning symbol");
-        turn_symbols = define_symbol(commands, command_length);
-    }
+        //char turn_symbols[command_length-5];
+        for(int inc=0; inc<=command_length-6; inc++) {
+          turn_symbols[inc] = commands[inc+4];
+          Serial.print("received : ");
+          Serial.println(turn_symbols[inc]);   
+          //commands配列から回転記号を抽出し、turn_symbols配列に入れる。
+        }
         
+        break;
+    }    
     
   } else {
     Serial.println("unknown command");
   }
+
 }
 
 

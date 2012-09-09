@@ -1,4 +1,8 @@
 #define STEPS 72  //for kopal 1702
+#define CLOSE_DEG 28
+#define OPEN_DEG 110
+#define MOTOR_SPEED 8
+#define TURN_DELAY 1000
 #include <Servo.h>
 
 Servo servo1;
@@ -11,8 +15,7 @@ int servo_status[4]={};
 int motor_pin[4][4]={{16,17,18,19},{8,9,10,11},{12,13,14,15},{0,1,2,3}};
 //このへんは要調整。0,1は使えないみたい。
 
-
-int s_deg; //servo_deg
+char turn_symbols = 0;
 
 /*
 ARM_LAYOUT
@@ -66,11 +69,11 @@ void forward(int motor_num, int rot){  //1rot = 90 deg
        digitalWrite(motor_pin[motor_num-1][prev], LOW);
        digitalWrite(motor_pin[motor_num-1][i], HIGH);
        digitalWrite(motor_pin[motor_num-1][next], HIGH);
-       delay(8);
+       delay(MOTOR_SPEED);
      }
    //Serial.println("");
    }
-   delay(1000);
+   delay(TURN_DELAY);
 }
 
 void reverse(int motor_num, int rot){
@@ -83,11 +86,10 @@ void reverse(int motor_num, int rot){
        digitalWrite(motor_pin[motor_num-1][prev], LOW);
        digitalWrite(motor_pin[motor_num-1][i], HIGH);
        digitalWrite(motor_pin[motor_num-1][next], HIGH);
-       Serial.println(motor_pin[motor_num-1][0]);
-       delay(8);
+       delay(MOTOR_SPEED);
      }
    }
-   delay(1000);
+   delay(TURN_DELAY);
 }
 
 void setup() {
@@ -101,25 +103,45 @@ void setup() {
   servo4.attach(servo_pin[3]);
   
   //stepper
-  for(int i=4; i<=20; i++){
+  for(int i=0; i<=20; i++){
     pinMode(i, OUTPUT);
   }  
 }
 
+
+//recvCmd : シリアルからのコマンド受信用
+void recvCmd(char *buf) { 
+  int count = 0; //受信文字数カウント用
+  char c; //受信文字列の一時保管
+  
+  while(1) {
+    if(Serial.available() > 0) {
+      c = Serial.read();
+      if(c == '\n') {  //改行コードは飛ばす
+        Serial.println("Line feed code was detected");
+        break;
+      } else {  
+        buf[count] = c;
+      }
+      if(c == '%') break;  //終端記号%でルーブ脱出
+      count++;
+    }
+  }
+  /*  -- for debug -- 受信メッセージ表示 */
+  Serial.print("recieved message : ");
+  for(int i=0; i<=count; i++) {
+    Serial.print(buf[i]);
+    Serial.print(",");
+  }
+  Serial.println("");
+}
+
+
+
 void loop() {
-  s_deg = 28;
-  Serial.print("Servo : ");
-  Serial.println(s_deg);
-  servo1.write(s_deg);
-  Serial.println(servo_pin[0]);
-  Serial.println("forward 1");
+  servo1.write(CLOSE_DEG);
   forward(1, 1); // 1回正転
   
-  s_deg = 110;
-  Serial.print("Servo : ");
-  Serial.println(s_deg);
-  servo1.write(s_deg);
-  
-  Serial.println("reverse 1");
-  reverse(1, 1); // 1回逆転
+  servo1.write(OPEN_DEG);
+  reverse(1, 2); // 1回逆転
 }
