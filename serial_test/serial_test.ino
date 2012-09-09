@@ -1,4 +1,4 @@
-char turn_symbols;
+char turn_symbols = 0;
 
 void setup() {
   Serial.begin(9600);
@@ -76,7 +76,7 @@ void loop() {
     switch(commands[3]) {  //コマンドにより分岐
       case 0x10:
         Serial.println("CMD : start turning");
-        move_arms(turn_symbols, command_length);
+        //move_arms(turn_symbols, command_length);
       case 0x1F:
         Serial.println("CMD : stop turning");
       case 0x20:

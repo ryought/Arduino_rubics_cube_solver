@@ -49,7 +49,7 @@ void setup(){
     pinMode(pin[i], OUTPUT);
   }
   Serial.begin(9600);
-  servo.attach(7);
+  servo.attach(2);
 }
  
 void loop(){

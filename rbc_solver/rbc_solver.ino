@@ -33,6 +33,7 @@ TURN_COMMAND
  -2: turn -180 degree (Counterclockwise rotation)
 
 COMMAND_LISTI
+ - stepper_write(
  - stepper_control(ARM_NUMBER 腕番号, MOVE_STEP 回転量(1,2,-1,-2等))
     指定番号の腕を回転量だけ回転させる。
  - cube_hold(ARM_NUMBER 腕番号, TRUE(HOLD)/FALSE(RELEASE))
