@@ -39,8 +39,134 @@ void move_arms(char *symbols, int com_len) {
   }
 }
 
+
+
 void define_symbols() {
-  turn_symbols
+  String def_symbols = turn_symbols;
+  //Serial.println(def_symbol.charAt(0));
+  int i=0;
+  /*
+  switch(def_symbols.charAt(i)) {
+    case 'F'
+    case 'B':
+    case 'R':
+    case 'L':
+    case '\'':
+    case '(':
+    case ' ':
+  }
+  */
+  for(int i=1; i<=20; i++) {
+    switch(def_symbols.charAt(i)) {
+      case 'F': //1
+        //回す処理＋ホールド処理
+        cube_hold(1, true);
+        cube_hold(2, true);
+        cube_hold(3, true);
+        cube_hold(4, true);
+        
+        if(def_symbols.charAt(i+1) == '2') {
+          stepper_control(1, 2);
+        }
+        if(def_symbols.charAt(i+1) == '\'') {
+          stepper_control(1, -1);
+        }
+        if(def_symbols.charAt(i+1) == ' ') {
+          stepper_control(1, 1);
+        }
+        break;
+      case 'B': //3
+        //回す処理＋ホールド処理
+        cube_hold(1, true);
+        cube_hold(2, true);
+        cube_hold(3, true);
+        cube_hold(4, true);
+        
+        if(def_symbols.charAt(i+1) == '2') {
+          stepper_control(3, 2);
+        }
+        if(def_symbols.charAt(i+1) == '\'') {
+          stepper_control(3, -1);
+        }
+        if(def_symbols.charAt(i+1) == ' ') {
+          stepper_control(3, 1);
+        }
+        break;
+      case 'R'://4
+        //回す処理＋ホールド処理
+        cube_hold(1, true);
+        cube_hold(2, true);
+        cube_hold(3, true);
+        cube_hold(4, true);
+        
+        if(def_symbols.charAt(i+1) == '2') {
+          stepper_control(4, 2);
+        }
+        if(def_symbols.charAt(i+1) == '\'') {
+          stepper_control(4, -1);
+        }
+        if(def_symbols.charAt(i+1) == ' ') {
+          stepper_control(4, 1);
+        }
+        break;
+      case 'L'://2
+        //回す処理＋ホールド処理
+        cube_hold(1, true);
+        cube_hold(2, true);
+        cube_hold(3, true);
+        cube_hold(4, true);
+        
+        if(def_symbols.charAt(i+1) == '2') {
+          stepper_control(2, 2);
+        }
+        if(def_symbols.charAt(i+1) == '\'') {
+          stepper_control(2, -1);
+        }
+        if(def_symbols.charAt(i+1) == ' ') {
+          stepper_control(2, 1);
+        }
+        break;
+      
+      case '\'' | '2' | ' ' | ')':
+        //逆向きに回す処理　　次の文字を読んで判定
+        continue;
+        
+      case '(':
+        //一周回転用
+        switch(def_symbols.charAt(i+1)) {
+          case 'f':
+            if(def_symbols.charAt(i+2) == '\'') {
+              //一回逆からまわり
+              cube_hold(1, true);
+              cube_hold(3, true);
+            }
+            if(def_symbols.charAt(i+2) == ')') {
+              //一回正からまわり
+              cube_hold(1, true);
+              cube_hold(3, true);
+            }
+          
+          case 'r':
+            if(def_symbols.charAt(i+2) == '\'') {
+              //一回逆からまわり
+              cube_hold(2, true);
+              cube_hold(4, true);
+            }
+            if(def_symbols.charAt(i+2) == ')') {
+              //一回正からまわり
+              cube_hold(2, true);
+              cube_hold(4, true);
+            }
+        }
+  }  
+      
+    
+    
+  /*
+  int x = def_symbols.indexOf(" ", 0);
+  Serial.println(x);
+  */
+}
 
 
 
@@ -51,7 +177,7 @@ void loop() {
   recvCmd(commands); //受信コマンドをcommandsに
   
   Serial.print("command[0] : ");
-  Serial.println(commands[0]);
+  Serial.println(commands[0]); 
   if(commands[0] == '$') { //先頭が$ならPCから送られたコマンド
     Serial.println("command recieved");
     
@@ -67,6 +193,7 @@ void loop() {
           Serial.println(turn_symbols[inc]);   
         }
         Serial.println("CMD : exit");
+        define_symbols();
         break;
       case 0x1F:
         Serial.println("CMD : stop turning");
@@ -86,9 +213,7 @@ void loop() {
           Serial.println(turn_symbols[inc]);   
           //commands配列から回転記号を抽出し、turn_symbols配列に入れる。
         }
-        
-        
-        
+        define_symbols();
         break;
     }    
     
