@@ -10,9 +10,9 @@ Servo servo2;
 Servo servo3;
 Servo servo4;
 
-int servo_pin[4]={4,5,6,7};
+int servo_pin[4]={0,1,2,3};
 int servo_status[4]={};
-int motor_pin[4][4]={{16,17,18,19},{8,9,10,11},{12,13,14,15},{0,1,2,3}};
+int motor_pin[4][4]={{16,17,18,19},{8,9,10,11},{12,13,14,15},{4,5,6,7}};
 //このへんは要調整。0,1は使えないみたい。
 
 char turn_symbols[60] = {0};
@@ -68,6 +68,32 @@ void forward(int motor_num, int rot){  //1rot = 90 deg
        digitalWrite(motor_pin[motor_num-1][prev], LOW);
        digitalWrite(motor_pin[motor_num-1][i], HIGH);
        digitalWrite(motor_pin[motor_num-1][next], HIGH);
+       delay(MOTOR_SPEED);
+     }
+   //Serial.println("");
+   }
+   delay(TURN_DELAY);
+}
+
+//2つのモータの同時回転用。空回り用
+void dual_forward(int motor_num_1, int motor_num_2, int rot) {
+  for(int l=0;l<rot*STEPS/4;l++){
+    /*dbg
+    Serial.print(l);
+    Serial.print(" : ");
+    */
+    for(int i=0;i<4;i++){
+       //Serial.print(i);
+       int prev = i-1;
+       int next = i+1;
+       if(prev < 0) prev = 3;
+       if(next > 3) next = 0;
+       digitalWrite(motor_pin[motor_num_1 - 1][prev], LOW);
+       digitalWrite(motor_pin[motor_num_2 - 1]
+       digitalWrite(motor_pin[motor_num_1 - 1][i], HIGH);
+       digitalWrite(motor_pin[motor_num_2 - 1][3-i], HIGH);
+       digitalWrite(motor_pin[motor_num_1 - 1][next], HIGH);
+       digitalWrite(motor_pin[motor_num_2 - 1]
        delay(MOTOR_SPEED);
      }
    //Serial.println("");
@@ -158,6 +184,33 @@ void setup() {
   servo3.attach(servo_pin[2]);
   servo4.attach(servo_pin[3]);
     
+}
+
+
+void idle_cube(int motor_num, int rot) {
+  switch(motor_num){
+    case 1: //1と3でつかんで、空回りさせる
+      cube_hold(1, true);
+      cube_hold(3, true);
+      cube_hold(2, false);
+      cube_hold(4, false);
+      //回す 1をrot, 3を-rotだけ回転させる
+      stepper_control(1, rot);
+      stepper_control(3, -rot);
+      //腕の位置復帰
+      //2,4でつかんで、1,3をはなし、位置を戻す
+      cube_hold(1, false);
+      cube_hold(3, false);
+      cube_hold(2, true);
+      cube_hold(4, true);
+      //回す
+      stepper_control(1, -rot);
+      stepper_control(3, rot);
+      break;
+    case 2: //2と4でつかんで、空回りさせる
+      
+      break;
+  }
 }
 
 
@@ -327,36 +380,68 @@ void loop() {
     Serial.println(command_length);
 
     switch(commands[3]) {  //コマンドにより分岐
-      case 0x10:
+      case 0x: //CMD : start turning 回転開始
+        /*
         Serial.println("CMD : start turning");
         for(int inc=0; inc<20; inc++) {
           Serial.print("received : ");
           Serial.println(turn_symbols[inc]);   
         }
         Serial.println("CMD : exit");
+        */
         //define_symbols();
         define_symbols();
-        break;
-      case 0x1F:
-        Serial.println("CMD : stop turning");
-        break;
-      case 0x20:
-        Serial.println("CMD : start capturing");
         
         break;
-      case 0x2F:
-        Serial.println("CMD : stop captureing");
+
+      case 0x10: //CMD: start capture
+        /*
+        Serial.println("CMD : start capturing");
+        */
+        //reply
+        Serial.print('#');
+        Serial.write(0x04, HEX);
+        Serial.write(0x00, HEX);
+        Serial.write(0x90, HEX);
+        Serial.print('\n');
+        
+        //空回りさせるような。順番を確認する
+        
         break;
-      case 0x80:
-        Serial.println("CMD : recieve turning symbol");
+        
+      case 0x1F: //CMD: end capture
+        /*
+        Serial.println("CMD : stop turning");
+        */
+        //reply
+        Serial.print('#');
+        Serial.write(0x04, HEX);
+        Serial.write(0x00, HEX);
+        Serial.write(0x9F, HEX);
+        Serial.print('\n');
+        break;
+        
+      case 0x2F:
+        //Serial.println("CMD : stop captureing");
+        break;
+      case 0x20: //CMD: ソルブ開始
+        Serial.write(0xA0);
+        break;
+      case 0x70: //CMD: 回転記号受け取り
+        //Serial.println("CMD : recieve turning symbol");
         //char turn_symbols[command_length-5];
         for(int inc=0; inc<=command_length-6; inc++) {
           turn_symbols[inc] = commands[inc+4];
+          /*
           Serial.print("received : ");
           Serial.println(turn_symbols[inc]);   
+          */
           //commands配列から回転記号を抽出し、turn_symbols配列に入れる。
         }
-        //define_symbols();
+        //そのまま回転開始
+        Serial.write(0xF0); //回転記号OK
+        define_symbols();
+        Serial.write(0xFF); //回転終了
         break;
     }    
     
