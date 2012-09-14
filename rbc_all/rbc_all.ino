@@ -7,12 +7,10 @@
 
 Servo servo1;
 Servo servo2;
-Servo servo3;
-Servo servo4;
 
-int servo_pin[4]={0,1,2,3};
+int servo_pin[2]={2,3};
 int servo_status[4]={};
-int motor_pin[4][4]={{16,17,18,19},{8,9,10,11},{12,13,14,15},{4,5,6,7}};
+int motor_pin[4][4]={{4,5,6,7},{8,9,10,11},{12,13,14,15},{16,17,18,19}};
 //このへんは要調整。0,1は使えないみたい。
 
 char turn_symbols[60] = {0};
@@ -53,6 +51,24 @@ COMMAND_LISTI
 
 */
 
+void setup() {
+  //serial(pc)
+  Serial.begin(9600);
+  
+
+  //stepper
+  for(int i=0; i<=20; i++){
+    pinMode(i, OUTPUT);
+  }
+
+  //servo
+  
+  servo1.attach(servo_pin[0]);
+  servo2.attach(servo_pin[1]);
+}
+
+
+
 void forward(int motor_num, int rot){  //1rot = 90 deg
   for(int l=0;l<rot*STEPS/4;l++){
     /*dbg
@@ -61,10 +77,28 @@ void forward(int motor_num, int rot){  //1rot = 90 deg
     */
     for(int i=0;i<4;i++){
        //Serial.print(i);
+       switch(i) {
+         case 0:
+           int i_2 = 0;
+           break;
+         case 1:
+           int i_2 = 3;
+           break;
+         case 2:
+           int i_2 = 2;
+           break;
+         case 3:
+           int i_2 = 1;
+           break;
+       }
        int prev = i-1;
        int next = i+1;
+       int prev_2 = i_2+1;
+       int next_2 = i_2-1;
+       
        if(prev < 0) prev = 3;
        if(next > 3) next = 0;
+       if(prev_2 > 3) 
        digitalWrite(motor_pin[motor_num-1][prev], LOW);
        digitalWrite(motor_pin[motor_num-1][i], HIGH);
        digitalWrite(motor_pin[motor_num-1][next], HIGH);
@@ -75,19 +109,23 @@ void forward(int motor_num, int rot){  //1rot = 90 deg
    delay(TURN_DELAY);
 }
 
+/*
 //2つのモータの同時回転用。空回り用
 void dual_forward(int motor_num_1, int motor_num_2, int rot) {
   for(int l=0;l<rot*STEPS/4;l++){
-    /*dbg
+    
     Serial.print(l);
     Serial.print(" : ");
-    */
+    
     for(int i=0;i<4;i++){
        //Serial.print(i);
-       int prev = i-1;
-       int next = i+1;
-       if(prev < 0) prev = 3;
-       if(next > 3) next = 0;
+       int prev_1 = i-1;
+       int next_1 = i+1;
+       if(prev_1 < 0) prev_1 = 3;
+       if(next_1 > 3) next_1 = 0;
+       
+       int i_2 = 4-i;
+       
        digitalWrite(motor_pin[motor_num_1 - 1][prev], LOW);
        digitalWrite(motor_pin[motor_num_2 - 1]
        digitalWrite(motor_pin[motor_num_1 - 1][i], HIGH);
@@ -100,6 +138,7 @@ void dual_forward(int motor_num_1, int motor_num_2, int rot) {
    }
    delay(TURN_DELAY);
 }
+*/
 
 void reverse(int motor_num, int rot){
   for(int l=0;l<rot*STEPS/4;l++){
@@ -117,21 +156,23 @@ void reverse(int motor_num, int rot){
    delay(TURN_DELAY);
 }
 
-void stepper_control(int motor_num, int rot) {
+void stepper_control(int motor_num, int rot) { //完成
   if(rot < 0) {
     reverse(motor_num, -rot);
   }
   if(rot > 0) {
     forward(motor_num, rot);
   }
+  /*dbg
   Serial.print("MOVING motor_num : ");
   Serial.print(motor_num);
   Serial.print(" rot : ");
   Serial.print(rot);
   Serial.println(" ");
+  */
 }
 
-void cube_hold(int motor_num, boolean lock_status) { //cube_hold(1, true)で1番を閉じる
+void cube_hold(int motor_num, boolean lock_status) { //cube_hold(1, true)で1番を閉じる 完成
   if(lock_status == true) {
     switch(motor_num) {
       case 1:
@@ -141,50 +182,33 @@ void cube_hold(int motor_num, boolean lock_status) { //cube_hold(1, true)で1番
         servo2.write(CLOSE_DEG);
         break;
       case 3:
-        servo3.write(CLOSE_DEG);
+        servo1.write(CLOSE_DEG);
         break;
       case 4:
-        servo4.write(CLOSE_DEG);
+        servo2.write(CLOSE_DEG);
         break;
     }
   }
   if(lock_status == false) {
     switch(motor_num) {
-      case 1:
+      case 1: //1と3
         servo1.write(OPEN_DEG);
         break;
-      case 2:
+      case 2: //2と4
         servo2.write(OPEN_DEG);
         break;
       case 3:
-        servo3.write(OPEN_DEG);
+        servo1.write(OPEN_DEG);
         break;
       case 4:
-        servo4.write(OPEN_DEG);
+        servo2.write(OPEN_DEG);
         break;
     }
   }
   delay(1000);
 }
 
-void setup() {
-  //serial(pc)
-  Serial.begin(9600);
-  
 
-  //stepper
-  for(int i=0; i<=20; i++){
-    pinMode(i, OUTPUT);
-  }
-
-  //servo
-  
-  servo1.attach(servo_pin[0]);
-  servo2.attach(servo_pin[1]);
-  servo3.attach(servo_pin[2]);
-  servo4.attach(servo_pin[3]);
-    
-}
 
 
 void idle_cube(int motor_num, int rot) {
@@ -203,12 +227,28 @@ void idle_cube(int motor_num, int rot) {
       cube_hold(3, false);
       cube_hold(2, true);
       cube_hold(4, true);
-      //回す
+      //元の位置まで戻す回転
       stepper_control(1, -rot);
       stepper_control(3, rot);
       break;
-    case 2: //2と4でつかんで、空回りさせる
       
+    case 2: //2と4でつかんで、空回りさせる
+      cube_hold(2, true);
+      cube_hold(4, true);
+      cube_hold(1, false);
+      cube_hold(3, false);
+      //回す 2をrot, 4を-rotだけ回転させる
+      stepper_control(2, rot);
+      stepper_control(4, -rot);
+      //腕の位置復帰
+      //1,3でつかんで、2,4をはなし、位置を戻す
+      cube_hold(2, false);
+      cube_hold(4, false);
+      cube_hold(1, true);
+      cube_hold(3, true);
+      //元の位置まで戻す回転
+      stepper_control(2, -rot);
+      stepper_control(4, rot);
       break;
   }
 }
@@ -223,7 +263,9 @@ void recvCmd(char *buf) {
     if(Serial.available() > 0) {
       c = Serial.read();
       if(c == '\n') {  //改行コードは飛ばす and 終端文字としての\n
+        /*
         Serial.println("Line feed code was detected");
+        */
         break;
       } else {  
         buf[count] = c;
@@ -234,130 +276,168 @@ void recvCmd(char *buf) {
       count++;
     }
   }
-  /*  -- for debug -- 受信メッセージ表示 */
+  /*  -- for debug -- 受信メッセージ表示 
+  Serial.print("message received");
+  /*
   Serial.print("recieved message : ");
   for(int i=0; i<=count; i++) {
     Serial.print(buf[i]);
     Serial.print(",");
   }
   Serial.println("");
+  */
 }
 
-
+void reply(int comm) {
+  Serial.print('#');
+  Serial.write(0x04);
+  Serial.write((uint8_t)0x00);
+  Serial.write(comm);
+  Serial.print('\n'); 
+}
 
 void define_symbols() {
   String def_symbols = turn_symbols;
+  /*
   Serial.println(def_symbols.charAt(0));
+  */
 
   for(int i=0; i<=60; i++) {
+    /*
     Serial.print("seeking at : ");
     Serial.println(i);
+    */
     switch(def_symbols.charAt(i)) {
       case 'F': //1
-        Serial.println("found : F");
+        //Serial.println("found : F");
         //回す処理＋ホールド処理
         cube_hold(1, true);
         cube_hold(2, true);
-        cube_hold(3, true);
-        cube_hold(4, true);
         
         if(def_symbols.charAt(i+1) == '2') {
           stepper_control(1, 2);
+          cube_hold(1, false);
+          stepper_control(1, -2);
+          cube_hold(1, true);
         }
         if(def_symbols.charAt(i+1) == '\'') {
           stepper_control(1, -1);
+          cube_hold(1, false);
+          stepper_control(1, 1);
+          cube_hold(1, true);
         }
         if(def_symbols.charAt(i+1) == ' ') {
           stepper_control(1, 1);
+          cube_hold(1, false);
+          stepper_control(1, -1);
+          cube_hold(1, true);
         }
         break;
       case 'B': //3
-        Serial.println("found : B");
+        //Serial.println("found : B");
         //回す処理＋ホールド処理
         cube_hold(1, true);
         cube_hold(2, true);
-        cube_hold(3, true);
-        cube_hold(4, true);
         
         if(def_symbols.charAt(i+1) == '2') {
           stepper_control(3, 2);
+          cube_hold(3, false);
+          stepper_control(3, -2);
+          cube_hold(3, true);
         }
         if(def_symbols.charAt(i+1) == '\'') {
           stepper_control(3, -1);
+          cube_hold(3, false);
+          stepper_control(3, 1);
+          cube_hold(3, true);
         }
         if(def_symbols.charAt(i+1) == ' ') {
           stepper_control(3, 1);
+          cube_hold(3, false);
+          stepper_control(3, -1);
+          cube_hold(3, true);
         }
         break;
       case 'R'://4
-        Serial.println("found ; R");
+        //Serial.println("found ; R");
         //回す処理＋ホールド処理
         cube_hold(1, true);
         cube_hold(2, true);
-        cube_hold(3, true);
-        cube_hold(4, true);
         
         if(def_symbols.charAt(i+1) == '2') {
           stepper_control(4, 2);
+          cube_hold(4, false);
+          stepper_control(4, -2);
+          cube_hold(4, true);
         }
         if(def_symbols.charAt(i+1) == '\'') {
           stepper_control(4, -1);
+          cube_hold(4, false);
+          stepper_control(4, 1);
+          cube_hold(4, true);
         }
         if(def_symbols.charAt(i+1) == ' ') {
           stepper_control(4, 1);
+          cube_hold(4, false);
+          stepper_control(4, -1);
+          cube_hold(4, true);
         }
         break;
       case 'L'://2
-        Serial.println("found : L");
+        //Serial.println("found : L");
         //回す処理＋ホールド処理
         cube_hold(1, true);
         cube_hold(2, true);
-        cube_hold(3, true);
-        cube_hold(4, true);
         
         if(def_symbols.charAt(i+1) == '2') {
           stepper_control(2, 2);
+          cube_hold(2, false);
+          stepper_control(2, -2);
+          cube_hold(2, true);
         }
         if(def_symbols.charAt(i+1) == '\'') {
           stepper_control(2, -1);
+          cube_hold(2, false);
+          stepper_control(2, 1);
+          cube_hold(2, true);
         }
         if(def_symbols.charAt(i+1) == ' ') {
           stepper_control(2, 1);
+          cube_hold(2, false);
+          stepper_control(2, -1);
+          cube_hold(2, true);
         }
         break;
       
       case '\'' | '2' | ' ' | ')':
-        Serial.println("found : ', 2,  , )");
+        //Serial.println("found : ', 2,  , )");
         //逆向きに回す処理　　次の文字を読んで判定
         continue;
         
       case '(':
-        Serial.println("found : (");
+        //Serial.println("found : (");
         //一周回転用
         switch(def_symbols.charAt(i+1)) {
-          case 'f':
+          case 'f': //1, 3を回転させる
             if(def_symbols.charAt(i+2) == '\'') {
               //一回逆からまわり
-              cube_hold(1, true);
-              cube_hold(3, true);
+              idle_cube(1, -1);
             }
             if(def_symbols.charAt(i+2) == ')') {
               //一回正からまわり
-              cube_hold(1, true);
-              cube_hold(3, true);
+              idle_cube(1, 1);
             }
-          
-          case 'r':
+            break;
+          case 'r': //2, 4を回転させる
             if(def_symbols.charAt(i+2) == '\'') {
               //一回逆からまわり
-              cube_hold(2, true);
-              cube_hold(4, true);
+              idle_cube(2, -1);
             }
             if(def_symbols.charAt(i+2) == ')') {
               //一回正からまわり
-              cube_hold(2, true);
-              cube_hold(4, true);
+              idle_cube(2, 1);
             }
+            break;
         }
     }
   }
@@ -370,43 +450,33 @@ void loop() {
   commands[0] = 0;
   recvCmd(commands); //受信コマンドをcommandsに
   
-  Serial.print("command[0] : ");
-  Serial.println(commands[0]); 
+  //Serial.print("command[0] : ");
+  //Serial.println(commands[0]); 
   if(commands[0] == '$') { //先頭が$ならPCから送られたコマンド
-    Serial.println("command recieved");
+    //Serial.println("command recieved");
     
     int command_length = commands[1] + (commands[2] * 256); //コマンド長計算
-    Serial.print("command length : ");
-    Serial.println(command_length);
+    //Serial.print("command length : ");
+    //Serial.println(command_length);
 
     switch(commands[3]) {  //コマンドにより分岐
-      case 0x: //CMD : start turning 回転開始
-        /*
-        Serial.println("CMD : start turning");
-        for(int inc=0; inc<20; inc++) {
-          Serial.print("received : ");
-          Serial.println(turn_symbols[inc]);   
-        }
-        Serial.println("CMD : exit");
-        */
-        //define_symbols();
-        define_symbols();
-        
-        break;
-
+    /*送られてくる可能性のあるコマンド一覧
+      0x10 16キャプチャ開始→reply(0x90), キャプチャの時の手順で回転させる(0x70)
+      0x1F 31キャプチャ終了→reply(0x9F)
+      0x20 32 ソルブ開始→reply(0xA0)→回転記号の到着まで待つ
+      0x70 112 回転記号送信→reply(0xF0)→define_symbolsで回転実行
+      
+      送信するコマンド
+      0xFF 回転終了
+    
+    
+    */
       case 0x10: //CMD: start capture
         /*
         Serial.println("CMD : start capturing");
         */
         //reply
-        Serial.print('#');
-        Serial.write(0x04, HEX);
-        Serial.write(0x00, HEX);
-        Serial.write(0x90, HEX);
-        Serial.print('\n');
-        
-        //空回りさせるような。順番を確認する
-        
+        reply(0x90);
         break;
         
       case 0x1F: //CMD: end capture
@@ -414,20 +484,13 @@ void loop() {
         Serial.println("CMD : stop turning");
         */
         //reply
-        Serial.print('#');
-        Serial.write(0x04, HEX);
-        Serial.write(0x00, HEX);
-        Serial.write(0x9F, HEX);
-        Serial.print('\n');
+        reply(0x9F);
         break;
         
-      case 0x2F:
-        //Serial.println("CMD : stop captureing");
-        break;
       case 0x20: //CMD: ソルブ開始
-        Serial.write(0xA0);
+        reply(0xA0);
         break;
-      case 0x70: //CMD: 回転記号受け取り
+      case 0x70: //CMD: 回転記号受け取りと、回転
         //Serial.println("CMD : recieve turning symbol");
         //char turn_symbols[command_length-5];
         for(int inc=0; inc<=command_length-6; inc++) {
@@ -438,10 +501,10 @@ void loop() {
           */
           //commands配列から回転記号を抽出し、turn_symbols配列に入れる。
         }
-        //そのまま回転開始
-        Serial.write(0xF0); //回転記号OK
+        //そのまま回転開始 
+        reply(0xF0); //回転記号OK
         define_symbols();
-        Serial.write(0xFF); //回転終了
+        reply(0xFF); //回転終了
         break;
     }    
     
@@ -449,11 +512,13 @@ void loop() {
     Serial.println("unknown command");
   }
   
+  /*
   cube_hold(1, true);
   stepper_control(1, 4);
   stepper_control(1, -1);
   cube_hold(1,false);
   delay(1000);
+  */
   /*
   cube_hold(1, true);
   cube_hold(2, true);
