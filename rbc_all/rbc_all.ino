@@ -5,8 +5,8 @@
 #define TURN_DELAY 1000
 #include <Servo.h>
 
-Servo servo1;
-Servo servo2;
+Servo servo1; //1と3
+Servo servo2; //2と4
 
 int servo_pin[2]={2,3};
 int servo_status[4]={};
@@ -71,34 +71,11 @@ void setup() {
 
 void forward(int motor_num, int rot){  //1rot = 90 deg
   for(int l=0;l<rot*STEPS/4;l++){
-    /*dbg
-    Serial.print(l);
-    Serial.print(" : ");
-    */
     for(int i=0;i<4;i++){
-       //Serial.print(i);
-       switch(i) {
-         case 0:
-           int i_2 = 0;
-           break;
-         case 1:
-           int i_2 = 3;
-           break;
-         case 2:
-           int i_2 = 2;
-           break;
-         case 3:
-           int i_2 = 1;
-           break;
-       }
        int prev = i-1;
        int next = i+1;
-       int prev_2 = i_2+1;
-       int next_2 = i_2-1;
-       
        if(prev < 0) prev = 3;
        if(next > 3) next = 0;
-       if(prev_2 > 3) 
        digitalWrite(motor_pin[motor_num-1][prev], LOW);
        digitalWrite(motor_pin[motor_num-1][i], HIGH);
        digitalWrite(motor_pin[motor_num-1][next], HIGH);
@@ -108,38 +85,6 @@ void forward(int motor_num, int rot){  //1rot = 90 deg
    }
    delay(TURN_DELAY);
 }
-
-/*
-//2つのモータの同時回転用。空回り用
-void dual_forward(int motor_num_1, int motor_num_2, int rot) {
-  for(int l=0;l<rot*STEPS/4;l++){
-    
-    Serial.print(l);
-    Serial.print(" : ");
-    
-    for(int i=0;i<4;i++){
-       //Serial.print(i);
-       int prev_1 = i-1;
-       int next_1 = i+1;
-       if(prev_1 < 0) prev_1 = 3;
-       if(next_1 > 3) next_1 = 0;
-       
-       int i_2 = 4-i;
-       
-       digitalWrite(motor_pin[motor_num_1 - 1][prev], LOW);
-       digitalWrite(motor_pin[motor_num_2 - 1]
-       digitalWrite(motor_pin[motor_num_1 - 1][i], HIGH);
-       digitalWrite(motor_pin[motor_num_2 - 1][3-i], HIGH);
-       digitalWrite(motor_pin[motor_num_1 - 1][next], HIGH);
-       digitalWrite(motor_pin[motor_num_2 - 1]
-       delay(MOTOR_SPEED);
-     }
-   //Serial.println("");
-   }
-   delay(TURN_DELAY);
-}
-*/
-
 void reverse(int motor_num, int rot){
   for(int l=0;l<rot*STEPS/4;l++){
      for(int i=3;i>=0;i--){
@@ -152,6 +97,96 @@ void reverse(int motor_num, int rot){
        digitalWrite(motor_pin[motor_num-1][next], HIGH);
        delay(MOTOR_SPEED);
      }
+   }
+   delay(TURN_DELAY);
+}
+
+
+
+//2つのモータの同時回転用。空回り用
+void dual_forward(int motor_num_1, int motor_num_2, int rot) {
+  int i_2;
+  for(int l=0;l<rot*STEPS/4;l++){
+   
+    for(int i=0;i<4;i++){
+       switch(i) {
+         case 0:
+           i_2 = 0;
+           break;
+         case 1:
+           i_2 = 3;
+           break;
+         case 2:
+           i_2 = 2;
+           break;
+         case 3:
+           i_2 = 1;
+           break;
+       }
+       //Serial.print(i);
+       int prev_1 = i-1;
+       int next_1 = i+1;
+       int prev_2 = i_2 + 1;
+       int next_2 = i_2 - 1;
+       if(prev_1 < 0) prev_1 = 3;
+       if(prev_2 > 3) prev_2 = 0;
+       if(next_1 > 3) next_1 = 0;
+       if(next_2 < 0) next_2 = 3;
+       
+       digitalWrite(motor_pin[motor_num_1 - 1][prev_1], LOW);
+       digitalWrite(motor_pin[motor_num_2 - 1][prev_2], LOW);
+       digitalWrite(motor_pin[motor_num_1 - 1][i], HIGH);
+       digitalWrite(motor_pin[motor_num_2 - 1][i_2], HIGH);
+       digitalWrite(motor_pin[motor_num_1 - 1][next_1], HIGH);
+       digitalWrite(motor_pin[motor_num_2 - 1][next_2], HIGH);
+       delay(MOTOR_SPEED);
+     }
+   //Serial.println("");
+   }
+   delay(TURN_DELAY);
+}
+
+
+
+//2つのモータの同時回転用。空回り用
+void dual_reverse(int motor_num_1, int motor_num_2, int rot) {
+  int i_2;
+  for(int l=0;l<rot*STEPS/4;l++){
+   
+    for(int i=3;i>=0;i--){
+       switch(i) {
+         case 0:
+           i_2 = 0;
+           break;
+         case 1:
+           i_2 = 3;
+           break;
+         case 2:
+           i_2 = 2;
+           break;
+         case 3:
+           i_2 = 1;
+           break;
+       }
+       //Serial.print(i);
+       int prev_1 = i+1;
+       int next_1 = i-1;
+       int prev_2 = i_2 - 1;
+       int next_2 = i_2 + 1;
+       if(prev_1 > 3) prev_1 = 0;
+       if(prev_2 < 0) prev_2 = 3;
+       if(next_1 < 0) next_1 = 3;
+       if(next_2 > 3) next_2 = 0;
+       
+       digitalWrite(motor_pin[motor_num_1 - 1][prev_1], LOW);
+       digitalWrite(motor_pin[motor_num_2 - 1][prev_2], LOW);
+       digitalWrite(motor_pin[motor_num_1 - 1][i], HIGH);
+       digitalWrite(motor_pin[motor_num_2 - 1][i_2], HIGH);
+       digitalWrite(motor_pin[motor_num_1 - 1][next_1], HIGH);
+       digitalWrite(motor_pin[motor_num_2 - 1][next_2], HIGH);
+       delay(MOTOR_SPEED);
+     }
+   //Serial.println("");
    }
    delay(TURN_DELAY);
 }
@@ -290,7 +325,7 @@ void recvCmd(char *buf) {
 
 void reply(int comm) {
   Serial.print('#');
-  Serial.write(0x04);
+  Serial.write(0x05);
   Serial.write((uint8_t)0x00);
   Serial.write(comm);
   Serial.print('\n'); 
@@ -445,6 +480,16 @@ void define_symbols() {
     
 
 void loop() {
+    stepper_control(1, 4);
+  Serial.print("1");
+  stepper_control(2, 4);
+  Serial.print("2");
+  
+  stepper_control(3, 4);
+  Serial.print("3");
+  stepper_control(4, 4);
+  Serial.print("4");
+  
   char commands[50]; //コマンド用バッファ
   
   commands[0] = 0;
